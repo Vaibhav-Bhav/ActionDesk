@@ -1,0 +1,8 @@
+{
+  "/api/cards/route": "app/api/cards/route.js",
+  "/business-memory/page": "app/business-memory/page.js",
+  "/action-center/page": "app/action-center/page.js",
+  "/imports/page": "app/imports/page.js",
+  "/page": "app/page.js",
+  "/insights/page": "app/insights/page.js"
+}
