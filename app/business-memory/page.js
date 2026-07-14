@@ -10,7 +10,7 @@ import MemoryCard from "@/components/memory/MemoryCard";
 
 export default function BusinessMemoryPage() {
   const { cards, loading } = useCards();
-  const [query, setQuery]   = useState("");
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
 
   const done = cards.filter((c) => c.status === "Done");
