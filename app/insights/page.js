@@ -1,5 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
+import { useCards } from "@/lib/useCards";
+import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
+
 import {
   ExecutiveInsights,
   BusinessRelationships,
@@ -9,16 +13,24 @@ import {
   StrategicPriorities,
 } from "@/components/intelligence";
 
-import {
-  executiveInsights,
-  businessRelationships,
-  businessSnapshot,
-  miniTrends,
-  aiPatterns,
-  strategicPriorities,
-} from "@/lib/intelligenceData";
-
 export default function InsightsPage() {
+  const { cards, loading } = useCards();
+
+  const intelligence = useMemo(
+    () => generateBusinessIntelligence(cards),
+    [cards]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-sm text-muted animate-pulse">
+          Generating business intelligence…
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Page header */}
@@ -30,22 +42,22 @@ export default function InsightsPage() {
       </div>
 
       {/* Section 1 — Executive Insights (Hero) */}
-      <ExecutiveInsights data={executiveInsights} />
+      <ExecutiveInsights data={intelligence.executiveInsights} />
 
       {/* Section 2 — Business Relationships */}
-      <BusinessRelationships data={businessRelationships} />
+      <BusinessRelationships data={intelligence.businessRelationships} />
 
       {/* Section 3 — Business Snapshot */}
-      <BusinessSnapshot data={businessSnapshot} />
+      <BusinessSnapshot data={intelligence.businessSnapshot} />
 
       {/* Section 4 — Mini Trends */}
-      <MiniTrends data={miniTrends} />
+      <MiniTrends data={intelligence.miniTrends} />
 
       {/* Section 5 — AI Pattern Discovery */}
-      <PatternDiscovery data={aiPatterns} />
+      <PatternDiscovery data={intelligence.aiPatterns} />
 
       {/* Section 6 — Today's Strategic Priorities */}
-      <StrategicPriorities data={strategicPriorities} />
+      <StrategicPriorities data={intelligence.strategicPriorities} />
     </div>
   );
 }
