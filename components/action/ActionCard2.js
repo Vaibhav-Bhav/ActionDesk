@@ -7,6 +7,7 @@ import CardHeader from "./CardHeader";
 import BusinessContext from "./BusinessContext";
 import ActionMenu from "./ActionMenu";
 import CompletionAnim from "./CompletionAnim";
+import AiPreviewModal from "./AiPreviewModal";
 import { useToast } from "@/components/ui/Toast";
 import { useNotifications } from "@/lib/notifications";
 
@@ -28,6 +29,8 @@ function formatDeadline(deadline) {
  * `expanded` state drives Business Details + un-clamping Summary/Why This
  * Matters together, and titles/recommended actions never truncate.
  *
+ * Sprint 4.3: Added AI generation flow via AiPreviewModal.
+ *
  * Props:
  *   card      ActionCard (with extended model)
  *   onUpdate  (updatedCard) => void
@@ -38,6 +41,11 @@ export default function ActionCard2({ card, onUpdate }) {
   const [showAnim, setShowAnim] = useState(false);
   const [actionNote, setActionNote] = useState(null);
   const [expanded, setExpanded] = useState(false);
+
+  // AI modal state
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiActionType, setAiActionType] = useState(null);
+
   const done = card.status === "Done";
   const deadlineLabel = formatDeadline(card.deadline);
 
@@ -79,6 +87,15 @@ export default function ActionCard2({ card, onUpdate }) {
       toast({ message: `${action} — drafted.`, type: "info" });
       setTimeout(() => setActionNote(null), 3500);
     }
+  }
+
+  function handleAiAction(actionType) {
+    setAiActionType(actionType);
+    setAiModalOpen(true);
+  }
+
+  function handleAiMarkDone() {
+    handleMarkDone();
   }
 
   return (
@@ -154,7 +171,12 @@ export default function ActionCard2({ card, onUpdate }) {
 
       {/* ── Actions row ─────────────────────────────────── */}
       <div className="mt-4 flex items-center justify-between gap-3">
-        <ActionMenu card={card} onAction={handleAction} disabled={done} />
+        <ActionMenu
+          card={card}
+          onAction={handleAction}
+          onAiAction={handleAiAction}
+          disabled={done}
+        />
 
         <button
           onClick={handleMarkDone}
@@ -167,6 +189,15 @@ export default function ActionCard2({ card, onUpdate }) {
           {done ? "Reopen" : "Mark Done"}
         </button>
       </div>
+
+      {/* ── AI Preview Modal ─────────────────────────────── */}
+      <AiPreviewModal
+        open={aiModalOpen}
+        onClose={() => { setAiModalOpen(false); setAiActionType(null); }}
+        card={card}
+        actionType={aiActionType}
+        onMarkDone={handleAiMarkDone}
+      />
     </motion.div>
   );
 }
