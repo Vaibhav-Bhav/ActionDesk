@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronDown } from "lucide-react";
+import { Sparkles, ChevronDown, Zap } from "lucide-react";
 import { getAiActions, RESOLVING_ACTIONS } from "@/lib/aiAssist";
 import { ACTION_DESCRIPTIONS } from "@/lib/demoData";
+import { AI_CAPABLE_ACTIONS } from "@/lib/ai/promptBuilder";
 
 // How many px the dropdown needs below the button before it flips upward
 const DROPDOWN_HEIGHT_ESTIMATE = 280;
@@ -14,11 +15,12 @@ const DROPDOWN_HEIGHT_ESTIMATE = 280;
  * Automatically opens upward when there is insufficient space below.
  *
  * Props:
- *   card        ActionCard
- *   onAction    (action: string, resolves: boolean) => void
- *   disabled    boolean
+ *   card          ActionCard
+ *   onAction      (action: string, resolves: boolean) => void
+ *   onAiAction    (actionType: string) => void  — triggers AI generation modal
+ *   disabled      boolean
  */
-export default function ActionMenu({ card, onAction, disabled = false }) {
+export default function ActionMenu({ card, onAction, onAiAction, disabled = false }) {
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
   const [hovered, setHovered] = useState(null);
@@ -37,6 +39,14 @@ export default function ActionMenu({ card, onAction, disabled = false }) {
   function handleAction(action) {
     setOpen(false);
     setHovered(null);
+
+    // If this action has a real AI implementation, route to AI pipeline
+    if (AI_CAPABLE_ACTIONS.has(action) && onAiAction) {
+      onAiAction(action);
+      return;
+    }
+
+    // Otherwise, use the existing mock handler
     onAction(action, RESOLVING_ACTIONS.has(action));
   }
 
@@ -88,18 +98,30 @@ export default function ActionMenu({ card, onAction, disabled = false }) {
 
               {/* Action list */}
               <div className="p-1.5">
-                {actions.map((action) => (
-                  <button
-                    key={action}
-                    onClick={() => handleAction(action)}
-                    onMouseEnter={() => setHovered(action)}
-                    onMouseLeave={() => setHovered(null)}
-                    className="flex w-full items-center gap-2 rounded-btn px-3 py-2 text-left text-xs text-slate-200 transition-colors hover:bg-white/6 hover:text-white"
-                  >
-                    <span className="h-1 w-1 shrink-0 rounded-full bg-accent/60" />
-                    {action}
-                  </button>
-                ))}
+                {actions.map((action) => {
+                  const isAi = AI_CAPABLE_ACTIONS.has(action);
+                  return (
+                    <button
+                      key={action}
+                      onClick={() => handleAction(action)}
+                      onMouseEnter={() => setHovered(action)}
+                      onMouseLeave={() => setHovered(null)}
+                      className="flex w-full items-center gap-2 rounded-btn px-3 py-2 text-left text-xs text-slate-200 transition-colors hover:bg-white/6 hover:text-white"
+                    >
+                      {isAi ? (
+                        <Zap size={10} className="shrink-0 text-accent" />
+                      ) : (
+                        <span className="h-1 w-1 shrink-0 rounded-full bg-accent/60" />
+                      )}
+                      <span className="flex-1">{action}</span>
+                      {isAi && (
+                        <span className="text-[9px] font-semibold text-accent/70 uppercase tracking-wider">
+                          AI
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           </>
