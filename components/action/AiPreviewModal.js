@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -61,17 +61,18 @@ export default function AiPreviewModal({ open, onClose, card, actionType, onMark
     }
   }, [card?.id, actionType]);
 
-  // Trigger generation when modal opens
-  const handleOpen = useCallback(() => {
-    if (open && !artifact && !loading) {
+  // Trigger generation when modal opens, reset state when it closes
+  useEffect(() => {
+    if (open && actionType) {
       generate();
     }
-  }, [open, artifact, loading, generate]);
-
-  // Effect equivalent: trigger on open
-  useState(() => {
-    if (open) handleOpen();
-  });
+    if (!open) {
+      setArtifact(null);
+      setError(null);
+      setCopied(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, actionType]);
 
   function handleCopy() {
     if (!artifact) return;
