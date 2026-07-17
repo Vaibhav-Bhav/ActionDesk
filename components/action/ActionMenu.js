@@ -86,14 +86,12 @@ export default function ActionMenu({ card, onAction, onAiAction, disabled = fals
               className={`absolute left-0 z-[110] w-72 overflow-hidden rounded-card border border-border bg-elevated shadow-modal ${positionClass}`}
             >
               {/* Description preview pane */}
-              <div className="border-b border-border bg-white/[0.02] px-3 py-2 min-h-[40px]">
+              <div className="border-b border-border bg-white/[0.02] px-3 py-2 min-h-[36px]">
                 {hovered ? (
                   <p className="text-[11px] leading-relaxed text-muted">
                     {ACTION_DESCRIPTIONS[hovered] ?? "Execute this AI action."}
                   </p>
-                ) : (
-                  <p className="text-[11px] text-subtle">Hover an action to preview what it generates.</p>
-                )}
+                ) : null}
               </div>
 
               {/* Action list */}
@@ -114,11 +112,7 @@ export default function ActionMenu({ card, onAction, onAiAction, disabled = fals
                         <span className="h-1 w-1 shrink-0 rounded-full bg-accent/60" />
                       )}
                       <span className="flex-1">{action}</span>
-                      {isAi && (
-                        <span className="text-[9px] font-semibold text-accent/70 uppercase tracking-wider">
-                          AI
-                        </span>
-                      )}
+
                     </button>
                   );
                 })}

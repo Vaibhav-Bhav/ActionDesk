@@ -1,14 +1,15 @@
 "use client";
 
 import { useCards } from "@/lib/useCards";
-import MorningLoader     from "@/components/morning/MorningLoader";
-import HeroBrief         from "@/components/morning/HeroBrief";
-import BusinessPulse     from "@/components/morning/BusinessPulse";
-import TodaysFocus       from "@/components/morning/TodaysFocus";
-import RecentTimeline    from "@/components/morning/RecentTimeline";
-import QuickWins         from "@/components/morning/QuickWins";
-import AISuggestions     from "@/components/morning/AISuggestions";
-import MorningEmptyState from "@/components/morning/MorningEmptyState";
+import MorningLoader        from "@/components/morning/MorningLoader";
+import AiExecutiveSummary   from "@/components/morning/AiExecutiveSummary";
+import HeroBrief            from "@/components/morning/HeroBrief";
+import BusinessPulse        from "@/components/morning/BusinessPulse";
+import TodaysFocus          from "@/components/morning/TodaysFocus";
+import RecentTimeline       from "@/components/morning/RecentTimeline";
+import QuickWins            from "@/components/morning/QuickWins";
+import AISuggestions        from "@/components/morning/AISuggestions";
+import MorningEmptyState    from "@/components/morning/MorningEmptyState";
 
 const FOCUS_RANK = { High: 0, Medium: 1, Low: 2 };
 
@@ -30,6 +31,9 @@ export default function DashboardPage() {
         <MorningEmptyState />
       ) : (
         <div className="space-y-6">
+          {/* ── AI Executive Summary ──────────────────────────── */}
+          <AiExecutiveSummary cards={cards} />
+
           {/* ── Hero ─────────────────────────────────────────── */}
           <HeroBrief
             cards={cards}
@@ -60,7 +64,7 @@ export default function DashboardPage() {
             {/* Right — 1/3 width */}
             <div className="space-y-4">
               <QuickWins cards={cards} />
-              <AISuggestions />
+              <AISuggestions cards={cards} />
             </div>
           </div>
         </div>
