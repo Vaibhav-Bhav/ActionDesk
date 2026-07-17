@@ -16,10 +16,8 @@ import IntelligenceBanner from "@/components/ui/IntelligenceBanner";
 
 function BusinessMemoryInner() {
   const { cards, loading } = useIntelligence();
-  const [query, setQuery]   = useState("");
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
-  const [bannerSource, setBannerSource] = useState(intent.from || null);
-  const dismissBanner = useCallback(() => setBannerSource(null), []);
 
   const done = cards.filter((c) => c.status === "Done");
 
@@ -53,14 +51,11 @@ function BusinessMemoryInner() {
   }, [done, query, filter]);
 
   // Banner stats
-  const companies      = new Set(done.map((c) => c.company).filter(Boolean)).size;
+  const companies = new Set(done.map((c) => c.company).filter(Boolean)).size;
   const learningsCount = done.filter((c) => c.learning).length;
 
   return (
     <div className="space-y-6">
-      {/* ── Context Banner ─────────────────────────────────── */}
-      <ContextBanner source={bannerSource} onDismiss={dismissBanner} />
-
       {/* Page header */}
       <div>
         <h1 className="text-xl font-bold text-white">Business Memory</h1>
@@ -86,8 +81,8 @@ function BusinessMemoryInner() {
             subtitle="Institutional knowledge from resolved actions"
             variant="memory"
             stats={[
-              { label: "memories",    value: done.length },
-              { label: "companies",   value: companies },
+              { label: "memories", value: done.length },
+              { label: "companies", value: companies },
               { label: "AI learnings", value: learningsCount || done.length },
             ]}
           />
