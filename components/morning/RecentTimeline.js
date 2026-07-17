@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   FileText, MessageCircle, Mail, Mic, ShoppingCart,
   CreditCard, Users, Wrench,
 } from "lucide-react";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 const CATEGORY_ICON = {
   Invoice:          { icon: FileText,      bg: "bg-yellow-500/10 text-yellow-400" },
@@ -39,11 +41,13 @@ function formatRelative(dateStr) {
 
 /**
  * RecentTimeline — vertical timeline, newest first, max 6 items.
+ * Sprint 4.6: Each item deep-links to its card in Action Center.
  *
  * Props:
  *   cards  ActionCard[]
  */
 export default function RecentTimeline({ cards }) {
+  const router = useRouter();
   const items = [...cards]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6);
@@ -67,12 +71,13 @@ export default function RecentTimeline({ cards }) {
             const time = formatRelative(card.createdAt);
 
             return (
-              <motion.div
+              <motion.button
                 key={card.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.25, delay: i * 0.05 }}
-                className="group relative flex gap-4 rounded-btn px-2 py-2.5 transition-colors hover:bg-white/[0.035]"
+                onClick={() => router.push(buildActionCenterUrl({ cardId: card.id, from: "morning", highlight: true, expandDetails: card.status !== "Done" }))}
+                className="group relative flex gap-4 rounded-btn px-2 py-2.5 text-left transition-colors hover:bg-white/[0.035] w-full"
               >
                 {/* Icon bubble (sits on the connector line) */}
                 <div
@@ -95,7 +100,7 @@ export default function RecentTimeline({ cards }) {
                     </p>
                   )}
                 </div>
-              </motion.div>
+              </motion.button>
             );
           })}
         </div>

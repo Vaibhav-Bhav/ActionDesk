@@ -1,11 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   BrainCircuit, Building2, CheckCircle2, Tag,
   Mail, MessageCircle, FileText, Mic, Lightbulb, ArrowRight,
 } from "lucide-react";
 import { CATEGORY_STYLE } from "@/lib/demoData";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 const SOURCE_ICON = {
   Gmail:           { icon: Mail,          color: "text-red-400"    },
@@ -29,6 +31,7 @@ function formatDate(iso) {
  *   index  number  (for stagger delay)
  */
 export default function MemoryCard({ card, index = 0 }) {
+  const router = useRouter();
   const catStyle = CATEGORY_STYLE[card.category] ?? "bg-white/5 text-muted border-white/10";
   const srcCfg   = SOURCE_ICON[card.source];
   const SrcIcon  = srcCfg?.icon;
@@ -128,7 +131,7 @@ export default function MemoryCard({ card, index = 0 }) {
         ))}
       </div>
 
-      {/* ── Footer: tags + date ───────────────────────────── */}
+      {/* ── Footer: tags + date + action center link ──────── */}
       <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5">
@@ -143,10 +146,29 @@ export default function MemoryCard({ card, index = 0 }) {
           ))}
         </div>
 
-        {/* Source icon + date */}
-        <div className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted">
-          {SrcIcon && <SrcIcon size={11} className={srcCfg.color} />}
-          <span>{formatDate(card.createdAt)}</span>
+        {/* Source icon + date + deep link */}
+        <div className="flex shrink-0 items-center gap-3">
+          {card.company && (
+            <button
+              onClick={() =>
+                router.push(
+                  buildActionCenterUrl({
+                    company:  card.company,
+                    from:     "memory",
+                    highlight: true,
+                  })
+                )
+              }
+              className="flex items-center gap-1 text-[10px] text-accent/70 hover:text-accent transition-colors"
+            >
+              <ArrowRight size={9} />
+              Open actions
+            </button>
+          )}
+          <div className="flex items-center gap-1.5 text-[11px] text-muted">
+            {SrcIcon && <SrcIcon size={11} className={srcCfg.color} />}
+            <span>{formatDate(card.createdAt)}</span>
+          </div>
         </div>
       </div>
     </motion.div>

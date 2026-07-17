@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -14,6 +15,7 @@ import {
   ExternalLink,
   Database,
 } from "lucide-react";
+import { buildActionCenterUrl, memoryCompanyLink } from "@/lib/deepLink";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 8 },
@@ -44,6 +46,8 @@ const COMM_ICON = {
 };
 
 export default function BusinessRelationships({ data }) {
+  const router = useRouter();
+
   return (
     <section>
       <div className="mb-3 flex items-center gap-1.5">
@@ -114,11 +118,26 @@ export default function BusinessRelationships({ data }) {
 
               {/* Actions */}
               <div className="mt-3 flex items-center gap-2">
-                <button className="inline-flex items-center gap-1 rounded-btn bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition-colors hover:bg-white/10">
+                <button
+                  onClick={() =>
+                    router.push(
+                      buildActionCenterUrl({
+                        company:  rel.company,
+                        from:     "relationship",
+                        highlight: true,
+                        expandDetails: true,
+                      })
+                    )
+                  }
+                  className="inline-flex items-center gap-1 rounded-btn bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition-colors hover:bg-white/10"
+                >
                   <ExternalLink size={10} />
                   Open Actions
                 </button>
-                <button className="inline-flex items-center gap-1 rounded-btn bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition-colors hover:bg-white/10">
+                <button
+                  onClick={() => router.push(memoryCompanyLink(rel.company))}
+                  className="inline-flex items-center gap-1 rounded-btn bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition-colors hover:bg-white/10"
+                >
                   <Database size={10} />
                   View Memory
                 </button>

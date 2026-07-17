@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { TrendingUp, AlertTriangle, Brain, ArrowRight } from "lucide-react";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 8 },
@@ -18,7 +20,7 @@ function AccentDot({ color }) {
 }
 
 /* ── Insight card wrapper ────────────────────────────────────── */
-function InsightCard({ icon: Icon, accentColor, borderColor, bgGlow, label, children, index }) {
+function InsightCard({ icon: Icon, accentColor, borderColor, bgGlow, label, children, index, onClick }) {
   return (
     <motion.div
       custom={index}
@@ -26,7 +28,8 @@ function InsightCard({ icon: Icon, accentColor, borderColor, bgGlow, label, chil
       initial="hidden"
       animate="visible"
       whileHover={{ y: -2, transition: { duration: 0.15 } }}
-      className={`rounded-card border bg-surface p-4 transition-shadow hover:shadow-card-hover ${borderColor}`}
+      className={`rounded-card border bg-surface p-4 transition-shadow hover:shadow-card-hover cursor-pointer ${borderColor}`}
+      onClick={onClick}
     >
       <div className="flex items-center gap-2 mb-3">
         <div className={`flex h-6 w-6 items-center justify-center rounded-md ${bgGlow}`}>
@@ -41,7 +44,12 @@ function InsightCard({ icon: Icon, accentColor, borderColor, bgGlow, label, chil
   );
 }
 
+/**
+ * ExecutiveInsights — Highest Opportunity, Biggest Risk, AI Learning.
+ * Sprint 4.6: Each card navigates to the matching company in Action Center.
+ */
 export default function ExecutiveInsights({ data }) {
+  const router = useRouter();
   const { opportunity, risk, aiLearning } = data;
 
   return (
@@ -62,6 +70,17 @@ export default function ExecutiveInsights({ data }) {
           bgGlow="bg-emerald-500/10"
           label="Biggest Opportunity"
           index={0}
+          onClick={() =>
+            router.push(
+              buildActionCenterUrl({
+                company:  opportunity.company,
+                priority: "High",
+                from:     "intelligence",
+                highlight: true,
+                expandDetails: true,
+              })
+            )
+          }
         >
           <p className="text-sm font-semibold text-white leading-snug">{opportunity.company}</p>
           <p className="mt-1 text-xs text-slate-400 leading-relaxed">{opportunity.insight}</p>
@@ -86,6 +105,17 @@ export default function ExecutiveInsights({ data }) {
           bgGlow="bg-red-500/10"
           label="Biggest Risk"
           index={1}
+          onClick={() =>
+            router.push(
+              buildActionCenterUrl({
+                company:  risk.company,
+                priority: "High",
+                from:     "intelligence",
+                highlight: true,
+                expandDetails: true,
+              })
+            )
+          }
         >
           <p className="text-sm font-semibold text-white leading-snug">{risk.company}</p>
           <p className="mt-1 text-xs text-slate-400 leading-relaxed">{risk.insight}</p>
@@ -107,6 +137,15 @@ export default function ExecutiveInsights({ data }) {
           bgGlow="bg-purple-500/10"
           label="AI Learning"
           index={2}
+          onClick={() =>
+            router.push(
+              buildActionCenterUrl({
+                category: "Quotation",
+                from:     "intelligence",
+                highlight: true,
+              })
+            )
+          }
         >
           <p className="mt-1 text-sm text-slate-300 leading-relaxed">{aiLearning.insight}</p>
           <div className="mt-4 flex items-center gap-1.5 rounded-md bg-purple-500/8 px-2.5 py-1.5">

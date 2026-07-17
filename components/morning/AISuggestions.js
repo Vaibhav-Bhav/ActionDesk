@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Check } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 /**
  * AISuggestions — derives AI suggestions from live card data via the BI engine.
@@ -14,6 +16,7 @@ import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
  */
 export default function AISuggestions({ cards }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [generating, setGenerating] = useState(null);
   const [done, setDone] = useState(new Set());
 
@@ -25,6 +28,8 @@ export default function AISuggestions({ cards }) {
     const actionLabel = deriveActionLabel(cards, p);
     return {
       id:     `sp-${i}`,
+      cardId: p.id || null,
+      priority: p.priority || null,
       title:  actionLabel,
       sub:    p.reason || p.title,
       action: p.title,
@@ -34,10 +39,25 @@ export default function AISuggestions({ cards }) {
   // Fallback if no priorities derived
   const items = suggestions.length > 0
     ? suggestions
-    : [{ id: "add-data", title: "Add business data", sub: "Import emails, invoices, or WhatsApp messages.", action: null }];
+    : [{ id: "add-data", cardId: null, title: "Add business data", sub: "Import emails, invoices, or WhatsApp messages.", action: null }];
 
   async function handleGenerate(item) {
     if (!item.action || done.has(item.id)) return;
+
+    // If there's a card to navigate to, deep-link there with AI pulse
+    if (item.cardId || item.priority) {
+      const href = buildActionCenterUrl({
+        cardId:   item.cardId,
+        priority: item.priority,
+        from:     "morning",
+        highlight: true,
+        pulseAI:  true,
+      });
+      router.push(href);
+      return;
+    }
+
+    // Fallback: animate locally
     setGenerating(item.id);
     await new Promise((r) => setTimeout(r, 1200));
     setGenerating(null);

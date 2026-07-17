@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, RefreshCw, ShieldCheck, Check,
   TrendingUp, AlertTriangle, Clock, Building2,
 } from "lucide-react";
 import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Confidence sources shown in the transparency block
@@ -41,6 +43,7 @@ function buildMetrics(bi) {
       value:  bi.revenue?.potentialRevenue ?? "₹0",
       tone:   "accent",
       sub:    "Pending quotations & orders",
+      href:   buildActionCenterUrl({ company: bi.executiveInsights?.opportunity?.company, priority: "High", from: "intelligence", highlight: true }),
     },
     {
       id:     "risk",
@@ -49,6 +52,7 @@ function buildMetrics(bi) {
       value:  bi.revenue?.revenueAtRisk ?? "₹0",
       tone:   "danger",
       sub:    "High-priority & overdue items",
+      href:   buildActionCenterUrl({ priority: "High", from: "intelligence", highlight: true }),
     },
     {
       id:     "actions",
@@ -57,6 +61,7 @@ function buildMetrics(bi) {
       value:  highPriority,
       tone:   "warning",
       sub:    `${pendingCards} total pending`,
+      href:   buildActionCenterUrl({ priority: "High", from: "morning", highlight: true }),
     },
     {
       id:     "customers",
@@ -65,6 +70,7 @@ function buildMetrics(bi) {
       value:  criticalCompanies || "—",
       tone:   "success",
       sub:    "Need attention today",
+      href:   buildActionCenterUrl({ from: "intelligence", highlight: true }),
     },
   ];
 }
@@ -87,6 +93,7 @@ const TONE_STYLE = {
  *   cards  ActionCard[]
  */
 export default function AiExecutiveSummary({ cards }) {
+  const router = useRouter();
   const [summary,    setSummary]    = useState(null);
   const [confidence, setConfidence] = useState(null);
   const [loading,    setLoading]    = useState(false);
@@ -157,7 +164,7 @@ export default function AiExecutiveSummary({ cards }) {
           </button>
         </div>
 
-        {/* ── Business Impact Metrics Row ─────────────────────── */}
+        {/* ── Business Impact Metrics Row ──────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 mb-5 lg:grid-cols-4">
           {metrics.map((m, i) => {
             const Icon = m.icon;
@@ -168,7 +175,8 @@ export default function AiExecutiveSummary({ cards }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.06 }}
-                className={`rounded-card border ${t.border} ${t.bg} p-3`}
+                onClick={() => m.href && router.push(m.href)}
+                className={`rounded-card border ${t.border} ${t.bg} p-3 ${m.href ? "cursor-pointer hover:brightness-110 transition-all" : ""}`}
               >
                 <div className={`flex h-6 w-6 items-center justify-center rounded-btn bg-white/5 mb-2`}>
                   <Icon size={12} className={t.icon} />
