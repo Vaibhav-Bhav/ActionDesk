@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Target, ArrowRight, Zap } from "lucide-react";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 8 },
@@ -18,7 +20,13 @@ const PRIORITY_CONFIG = {
   Medium:   { color: "text-sky-400", bg: "bg-sky-500/10", border: "border-sky-500/20", dot: "bg-sky-400" },
 };
 
+/**
+ * StrategicPriorities — today's AI-scored priorities.
+ * Sprint 4.6: "Take Action" button deep-links to the card with AI pulsed.
+ */
 export default function StrategicPriorities({ data }) {
+  const router = useRouter();
+
   return (
     <section>
       <div className="mb-3 flex items-center gap-1.5">
@@ -31,6 +39,15 @@ export default function StrategicPriorities({ data }) {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {data.map((item, i) => {
           const pc = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.Medium;
+
+          const href = buildActionCenterUrl({
+            cardId:        item.id || null,
+            priority:      item.priority || null,
+            from:          "priority",
+            highlight:     true,
+            expandDetails: true,
+            pulseAI:       true,
+          });
 
           return (
             <motion.div
@@ -63,7 +80,10 @@ export default function StrategicPriorities({ data }) {
               </div>
 
               {/* Action Button */}
-              <button className="mt-3 inline-flex items-center gap-1.5 rounded-btn bg-accent/10 px-3 py-1.5 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/20">
+              <button
+                onClick={() => router.push(href)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-btn bg-accent/10 px-3 py-1.5 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/20"
+              >
                 <Zap size={10} />
                 Take Action
                 <ArrowRight size={10} />

@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Lightbulb } from "lucide-react";
+import { Sparkles, Lightbulb, ArrowRight } from "lucide-react";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 8 },
@@ -27,6 +29,8 @@ const CONFIDENCE_STYLE = {
 };
 
 export default function PatternDiscovery({ data }) {
+  const router = useRouter();
+
   return (
     <section>
       <div className="mb-3 flex items-center gap-1.5">
@@ -49,7 +53,12 @@ export default function PatternDiscovery({ data }) {
               initial="hidden"
               animate="visible"
               whileHover={{ y: -2, transition: { duration: 0.15 } }}
-              className="rounded-card border border-border bg-surface p-4 transition-shadow hover:shadow-card-hover"
+              onClick={() => {
+                if (pattern.filterLink) {
+                  router.push(buildActionCenterUrl(pattern.filterLink));
+                }
+              }}
+              className={`group rounded-card border border-border bg-surface p-4 transition-shadow hover:shadow-card-hover ${pattern.filterLink ? 'cursor-pointer' : ''}`}
             >
               {/* Category chip */}
               <div className="flex items-center justify-between gap-2">
@@ -73,9 +82,14 @@ export default function PatternDiscovery({ data }) {
               <p className="mt-2 text-[11px] text-slate-500 leading-snug">{pattern.evidence}</p>
 
               {/* Business Impact */}
-              <div className="mt-3 rounded-md bg-white/[0.02] px-2.5 py-1.5">
-                <p className="text-2xs text-muted">Business Impact</p>
-                <p className="mt-0.5 text-xs text-slate-400">{pattern.businessImpact}</p>
+              <div className="mt-3 rounded-md bg-white/[0.02] px-2.5 py-1.5 flex justify-between items-end">
+                <div>
+                  <p className="text-2xs text-muted">Business Impact</p>
+                  <p className="mt-0.5 text-xs text-slate-400">{pattern.businessImpact}</p>
+                </div>
+                {pattern.filterLink && (
+                  <ArrowRight size={12} className={`${cs.color} shrink-0 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0`} />
+                )}
               </div>
             </motion.div>
           );

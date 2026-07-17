@@ -18,6 +18,8 @@ function BusinessMemoryInner() {
   const { cards, loading } = useIntelligence();
   const [query, setQuery]   = useState("");
   const [filter, setFilter] = useState("all");
+  const [bannerSource, setBannerSource] = useState(intent.from || null);
+  const dismissBanner = useCallback(() => setBannerSource(null), []);
 
   const done = cards.filter((c) => c.status === "Done");
 
@@ -56,6 +58,9 @@ function BusinessMemoryInner() {
 
   return (
     <div className="space-y-6">
+      {/* ── Context Banner ─────────────────────────────────── */}
+      <ContextBanner source={bannerSource} onDismiss={dismissBanner} />
+
       {/* Page header */}
       <div>
         <h1 className="text-xl font-bold text-white">Business Memory</h1>
@@ -162,33 +167,22 @@ function BusinessMemoryInner() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page export — single export default, wraps inner component in Suspense.
-// Required by Next.js 14 App Router when the inner component uses hooks.
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Page export wraps inner component in Suspense (Next.js 14 requirement)
 export default function BusinessMemoryPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-xl font-bold text-white">Business Memory</h1>
-            <p className="mt-1 text-sm text-muted">
-              Institutional knowledge built from every resolved action.
-            </p>
-          </div>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-32 rounded-card border border-border bg-surface animate-pulse"
-              />
-            ))}
-          </div>
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-xl font-bold text-white">Business Memory</h1>
+          <p className="mt-1 text-sm text-muted">Institutional knowledge built from every resolved action.</p>
         </div>
-      }
-    >
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 rounded-card border border-border bg-surface animate-pulse" />
+          ))}
+        </div>
+      </div>
+    }>
       <BusinessMemoryInner />
     </Suspense>
   );

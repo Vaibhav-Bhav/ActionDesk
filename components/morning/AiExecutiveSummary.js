@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, RefreshCw,
@@ -247,7 +248,8 @@ export default function AiExecutiveSummary({ cards }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.06 }}
-                className={`rounded-card border ${t.border} ${t.bg} p-3`}
+                onClick={() => m.href && router.push(m.href)}
+                className={`rounded-card border ${t.border} ${t.bg} p-3 ${m.href ? "cursor-pointer hover:brightness-110 transition-all" : ""}`}
               >
                 <div className="flex h-6 w-6 items-center justify-center rounded-btn bg-white/5 mb-2">
                   <Icon size={12} className={t.icon} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, Check, ArrowRight } from "lucide-react";
 import CardHeader from "./CardHeader";
@@ -35,16 +35,33 @@ function formatDeadline(deadline) {
  *   card      ActionCard (with extended model)
  *   onUpdate  (updatedCard) => void
  */
-export default function ActionCard2({ card, onUpdate }) {
+/**
+ * ActionCard2 — executive briefing card for Action Center.
+ *
+ * Sprint 4.6 additions:
+ *   highlighted     boolean  — single-pulse ring when navigated-to via deep link
+ *   defaultExpanded boolean  — open Business Details panel on mount
+ *   pulseAI         boolean  — pulse the AI Assist button once on mount
+ */
+export default function ActionCard2({ card, onUpdate, highlighted = false, defaultExpanded = false, pulseAI = false }) {
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const [showAnim, setShowAnim] = useState(false);
   const [actionNote, setActionNote] = useState(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  // Deep-link: if defaultExpanded changes (first navigation), sync
+  useEffect(() => { if (defaultExpanded) setExpanded(true); }, [defaultExpanded]);
 
   // AI modal state
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiActionType, setAiActionType] = useState(null);
+
+  // Track whether the AI button pulse has fired (one-shot)
+  const [didPulseAI, setDidPulseAI] = useState(false);
+  useEffect(() => {
+    if (pulseAI && !didPulseAI) setDidPulseAI(true);
+  }, [pulseAI, didPulseAI]);
 
   const done = card.status === "Done";
   const deadlineLabel = formatDeadline(card.deadline);
@@ -105,8 +122,13 @@ export default function ActionCard2({ card, onUpdate }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className={`relative card-hover rounded-card border border-border bg-surface px-5 pt-4 pb-3.5 transition-opacity ${done ? "opacity-55" : ""
-        }`}
+      className={`relative card-hover rounded-card border bg-surface px-5 pt-4 pb-3.5 transition-all ${
+        done ? "opacity-55" : ""
+      } ${
+        highlighted
+          ? "border-accent/60 shadow-[0_0_0_2px_rgba(79,115,255,0.25)] animate-deep-link-pulse"
+          : "border-border"
+      }`}
     >
       <CompletionAnim show={showAnim} />
 
@@ -171,12 +193,14 @@ export default function ActionCard2({ card, onUpdate }) {
 
       {/* ── Actions row ─────────────────────────────────── */}
       <div className="mt-4 flex items-center justify-between gap-3">
-        <ActionMenu
-          card={card}
-          onAction={handleAction}
-          onAiAction={handleAiAction}
-          disabled={done}
-        />
+        <div className={didPulseAI ? "animate-ai-pulse-once" : ""}>
+          <ActionMenu
+            card={card}
+            onAction={handleAction}
+            onAiAction={handleAiAction}
+            disabled={done}
+          />
+        </div>
 
         <button
           onClick={handleMarkDone}

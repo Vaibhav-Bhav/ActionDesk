@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Clock, ArrowRight } from "lucide-react";
 import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
+import { buildActionCenterUrl } from "@/lib/deepLink";
 
 const PRIORITY_DOT = {
   Critical: "bg-danger",
@@ -20,9 +21,7 @@ const PRIORITY_PILL = {
 /**
  * TodaysFocus — 3-5 AI-derived priorities from the BI engine.
  *
- * Uses strategicPriorities from generateBusinessIntelligence instead of
- * raw card sorting, so priorities reflect value, urgency, and risk —
- * not just priority field alone.
+ * Sprint 4.6: Each priority navigates directly to its card in Action Center.
  *
  * Props:
  *   cards  ActionCard[]
@@ -52,49 +51,60 @@ export default function TodaysFocus({ cards }) {
       </div>
 
       <div className="space-y-1">
-        {items.map((item, i) => (
-          <motion.button
-            key={item.id}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.25, delay: i * 0.06 }}
-            onClick={() => router.push("/action-center")}
-            className="group flex w-full items-start gap-3 rounded-btn px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
-          >
-            {/* Priority dot */}
-            <span
-              className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[item.priority] ?? "bg-muted"}`}
-            />
+        {items.map((item, i) => {
+          // Build a targeted deep link for this priority
+          const href = buildActionCenterUrl({
+            cardId:        item.id || null,
+            priority:      item.priority || null,
+            from:          "priority",
+            highlight:     true,
+            expandDetails: true,
+          });
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <span className="block truncate text-[13px] text-slate-200 group-hover:text-white transition-colors leading-snug">
-                {item.title}
-              </span>
-              {item.reason && (
-                <span className="block mt-0.5 text-[11px] text-muted leading-snug line-clamp-1">
-                  {item.reason}
+          return (
+            <motion.button
+              key={item.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.25, delay: i * 0.06 }}
+              onClick={() => router.push(href)}
+              className="group flex w-full items-start gap-3 rounded-btn px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+            >
+              {/* Priority dot */}
+              <span
+                className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[item.priority] ?? "bg-muted"}`}
+              />
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <span className="block truncate text-[13px] text-slate-200 group-hover:text-white transition-colors leading-snug">
+                  {item.title}
+                </span>
+                {item.reason && (
+                  <span className="block mt-0.5 text-[11px] text-muted leading-snug line-clamp-1">
+                    {item.reason}
+                  </span>
+                )}
+              </div>
+
+              {/* Expected impact */}
+              {item.expectedImpact && (
+                <span className="shrink-0 text-[10px] text-muted font-medium mt-0.5 hidden sm:block max-w-[120px] text-right leading-tight truncate">
+                  {item.expectedImpact}
                 </span>
               )}
-            </div>
 
-            {/* Expected impact */}
-            {item.expectedImpact && (
-              <span className="shrink-0 text-[10px] text-muted font-medium mt-0.5 hidden sm:block max-w-[120px] text-right leading-tight truncate">
-                {item.expectedImpact}
+              {/* Priority badge */}
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  PRIORITY_PILL[item.priority] ?? "bg-white/5 text-muted"
+                }`}
+              >
+                {item.priority}
               </span>
-            )}
-
-            {/* Priority badge */}
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                PRIORITY_PILL[item.priority] ?? "bg-white/5 text-muted"
-              }`}
-            >
-              {item.priority}
-            </span>
-          </motion.button>
-        ))}
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
