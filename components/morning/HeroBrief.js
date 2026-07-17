@@ -59,7 +59,7 @@ export default function HeroBrief({ cards, onSynced, greeting, estMinutes }) {
               {greeting}, Raj 👋
             </h1>
             <p className="mt-1.5 text-sm leading-relaxed text-muted">
-              I've reviewed today's business activity.
+              I&apos;ve reviewed today&apos;s business activity.
             </p>
 
             {/* Highlights chips */}
@@ -81,7 +81,7 @@ export default function HeroBrief({ cards, onSynced, greeting, estMinutes }) {
             {estMinutes > 0 && (
               <div className="rounded-xl border border-border bg-elevated px-5 py-4 text-center">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-                  Today's Work
+                  Today&apos;s Work
                 </p>
                 <p className="mt-2 text-3xl font-bold tabular-nums text-white">
                   ~{estMinutes}

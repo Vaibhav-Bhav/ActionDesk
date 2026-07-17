@@ -29,7 +29,7 @@ export default function MorningEmptyState() {
           Everything looks great.
         </h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
-          Your AI Chief of Staff didn't find any urgent work today. Import your
+          Your AI Chief of Staff didn&apos;t find any urgent work today. Import your
           business data to get started.
         </p>
 

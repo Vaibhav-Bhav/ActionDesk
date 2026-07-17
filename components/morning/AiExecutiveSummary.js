@@ -145,7 +145,7 @@ function SectionedSummary({ bi, aiText, loading }) {
 
       {/* Today's Priorities */}
       <div className="rounded-card border border-border bg-elevated p-4 space-y-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Today's Priorities</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Today&apos;s Priorities</p>
         {priorities.length > 0 ? (
           <ul className="space-y-1.5">
             {priorities.map((p, i) => (

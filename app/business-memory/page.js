@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { BrainCircuit, CheckCircle2, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useIntelligence } from "@/lib/useIntelligence";
@@ -9,9 +9,14 @@ import MemorySearch from "@/components/memory/MemorySearch";
 import MemoryCard from "@/components/memory/MemoryCard";
 import IntelligenceBanner from "@/components/ui/IntelligenceBanner";
 
-export default function BusinessMemoryPage() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Inner component — contains all hooks, logic and UI.
+// Wrapped in Suspense by the exported page shell below.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function BusinessMemoryInner() {
   const { cards, loading } = useIntelligence();
-  const [query, setQuery] = useState("");
+  const [query, setQuery]   = useState("");
   const [filter, setFilter] = useState("all");
   const [bannerSource, setBannerSource] = useState(intent.from || null);
   const dismissBanner = useCallback(() => setBannerSource(null), []);
@@ -47,8 +52,8 @@ export default function BusinessMemoryPage() {
     return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [done, query, filter]);
 
-  // Banner stats derived from cards
-  const companies     = new Set(done.map((c) => c.company).filter(Boolean)).size;
+  // Banner stats
+  const companies      = new Set(done.map((c) => c.company).filter(Boolean)).size;
   const learningsCount = done.filter((c) => c.learning).length;
 
   return (
@@ -64,7 +69,7 @@ export default function BusinessMemoryPage() {
         </p>
       </div>
 
-      {/* Loading */}
+      {/* Loading skeletons */}
       {loading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -81,8 +86,8 @@ export default function BusinessMemoryPage() {
             subtitle="Institutional knowledge from resolved actions"
             variant="memory"
             stats={[
-              { label: "memories", value: done.length },
-              { label: "companies", value: companies },
+              { label: "memories",    value: done.length },
+              { label: "companies",   value: companies },
               { label: "AI learnings", value: learningsCount || done.length },
             ]}
           />
@@ -117,13 +122,19 @@ export default function BusinessMemoryPage() {
               </p>
               <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted">
                 <span>Mark actions done in</span>
-                <a href="/action-center" className="inline-flex items-center gap-1 text-accent hover:underline font-medium">
+                <a
+                  href="/action-center"
+                  className="inline-flex items-center gap-1 text-accent hover:underline font-medium"
+                >
                   Action Center <ArrowRight size={11} />
                 </a>
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-2 text-[11px] text-muted">
                 {["Import communication", "→", "AI extracts action", "→", "You resolve it", "→", "Knowledge saved here"].map((step, i) => (
-                  <span key={i} className={step === "→" ? "text-border" : "font-medium text-slate-400"}>
+                  <span
+                    key={i}
+                    className={step === "→" ? "text-border" : "font-medium text-slate-400"}
+                  >
                     {step}
                   </span>
                 ))}
@@ -139,7 +150,7 @@ export default function BusinessMemoryPage() {
             </div>
           )}
 
-          {/* Memory cards — pass all cards so RelationshipLearnings can derive patterns */}
+          {/* Memory cards — pass allCards so RelationshipLearnings can derive patterns */}
           {filtered.length > 0 && (
             <div className="space-y-4">
               <p className="text-xs text-muted">

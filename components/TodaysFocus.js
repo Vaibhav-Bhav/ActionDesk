@@ -8,10 +8,10 @@ export default function TodaysFocus({ cards }) {
 
   return (
     <div className="rounded-card border border-border bg-card p-5">
-      <h2 className="text-sm font-medium text-white">Today's Focus</h2>
+      <h2 className="text-sm font-medium text-white">Today&apos;s Focus</h2>
       <div className="mt-4 space-y-3">
         {top.length === 0 && (
-          <p className="text-sm text-muted">Nothing urgent — you're caught up.</p>
+          <p className="text-sm text-muted">Nothing urgent — you&apos;re caught up.</p>
         )}
         {top.map((card, i) => (
           <div key={card.id} className="flex items-start gap-3">
