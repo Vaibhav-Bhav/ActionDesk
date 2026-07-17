@@ -10,8 +10,7 @@ import RecentTimeline       from "@/components/morning/RecentTimeline";
 import QuickWins            from "@/components/morning/QuickWins";
 import AISuggestions        from "@/components/morning/AISuggestions";
 import MorningEmptyState    from "@/components/morning/MorningEmptyState";
-
-const FOCUS_RANK = { High: 0, Medium: 1, Low: 2 };
+import IntelligenceBanner   from "@/components/ui/IntelligenceBanner";
 
 export default function DashboardPage() {
   const { cards, loading, addCards } = useCards();
@@ -19,18 +18,29 @@ export default function DashboardPage() {
   // ── Derived stats ─────────────────────────────────────────
   const pending    = cards.filter((c) => c.status !== "Done");
   const urgent     = pending.filter((c) => c.priority === "High").length;
+  const meetings   = pending.filter((c) => c.category === "Meeting").length;
   const estMinutes = urgent * 8 + Math.max(0, pending.length - urgent) * 4;
 
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  // ── Show loader while data is fetching ────────────────────
   return (
     <MorningLoader loading={loading}>
       {cards.length === 0 ? (
         <MorningEmptyState />
       ) : (
         <div className="space-y-6">
+          {/* ── Intelligence Banner ────────────────────────────── */}
+          <IntelligenceBanner
+            title="Today's Business Overview"
+            subtitle="Morning Brief · AI Intelligence"
+            stats={[
+              { label: "pending",  value: pending.length },
+              { label: "urgent",   value: urgent },
+              { label: "meetings", value: meetings },
+            ]}
+          />
+
           {/* ── AI Executive Summary ──────────────────────────── */}
           <AiExecutiveSummary cards={cards} />
 
@@ -50,12 +60,9 @@ export default function DashboardPage() {
 
             {/* Left — 2/3 width */}
             <div className="space-y-6 lg:col-span-2">
-              {/* Today's Focus */}
               <div className="rounded-card border border-border bg-surface p-5">
                 <TodaysFocus cards={cards} />
               </div>
-
-              {/* Recent Timeline */}
               <div className="rounded-card border border-border bg-surface p-5">
                 <RecentTimeline cards={cards} />
               </div>

@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useCards } from "@/lib/useCards";
 import { BrainCircuit, CheckCircle2, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useIntelligence } from "@/lib/useIntelligence";
 import MemoryStats from "@/components/memory/MemoryStats";
 import MemorySearch from "@/components/memory/MemorySearch";
 import MemoryCard from "@/components/memory/MemoryCard";
+import IntelligenceBanner from "@/components/ui/IntelligenceBanner";
 
 export default function BusinessMemoryPage() {
-  const { cards, loading } = useCards();
+  const { cards, loading } = useIntelligence();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
 
@@ -18,7 +19,6 @@ export default function BusinessMemoryPage() {
   const filtered = useMemo(() => {
     let result = done;
 
-    // Category/type filter
     if (filter === "customer") {
       result = result.filter((c) =>
         ["Customer Request", "Complaint", "Quotation", "Meeting"].includes(c.category)
@@ -33,7 +33,6 @@ export default function BusinessMemoryPage() {
       result = result.filter((c) => c.category === "Complaint");
     }
 
-    // Text search
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter((c) =>
@@ -45,6 +44,10 @@ export default function BusinessMemoryPage() {
 
     return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [done, query, filter]);
+
+  // Banner stats derived from cards
+  const companies     = new Set(done.map((c) => c.company).filter(Boolean)).size;
+  const learningsCount = done.filter((c) => c.learning).length;
 
   return (
     <div className="space-y-6">
@@ -60,13 +63,25 @@ export default function BusinessMemoryPage() {
       {loading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 rounded-card border border-border bg-surface animate-pulse" />
+            <div key={i} className="h-40 rounded-card border border-border bg-surface animate-pulse" />
           ))}
         </div>
       )}
 
       {!loading && (
         <>
+          {/* Intelligence Banner */}
+          <IntelligenceBanner
+            title="Business Memory"
+            subtitle="Institutional knowledge from resolved actions"
+            variant="memory"
+            stats={[
+              { label: "memories", value: done.length },
+              { label: "companies", value: companies },
+              { label: "AI learnings", value: learningsCount || done.length },
+            ]}
+          />
+
           {/* Stats */}
           <MemoryStats cards={cards} />
 
@@ -101,7 +116,6 @@ export default function BusinessMemoryPage() {
                   Action Center <ArrowRight size={11} />
                 </a>
               </div>
-              {/* How it works flow */}
               <div className="mt-8 flex flex-wrap justify-center gap-2 text-[11px] text-muted">
                 {["Import communication", "→", "AI extracts action", "→", "You resolve it", "→", "Knowledge saved here"].map((step, i) => (
                   <span key={i} className={step === "→" ? "text-border" : "font-medium text-slate-400"}>
@@ -120,14 +134,14 @@ export default function BusinessMemoryPage() {
             </div>
           )}
 
-          {/* Memory cards */}
+          {/* Memory cards — pass all cards so RelationshipLearnings can derive patterns */}
           {filtered.length > 0 && (
             <div className="space-y-4">
               <p className="text-xs text-muted">
                 {filtered.length} memor{filtered.length !== 1 ? "ies" : "y"} found
               </p>
               {filtered.map((card, i) => (
-                <MemoryCard key={card.id} card={card} index={i} />
+                <MemoryCard key={card.id} card={card} index={i} allCards={cards} />
               ))}
             </div>
           )}

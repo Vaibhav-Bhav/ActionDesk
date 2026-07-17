@@ -2,10 +2,12 @@
 
 import { motion } from "framer-motion";
 import {
-  BrainCircuit, Building2, CheckCircle2, Tag,
+  Building2, CheckCircle2, Tag,
   Mail, MessageCircle, FileText, Mic, Lightbulb, ArrowRight,
 } from "lucide-react";
 import { CATEGORY_STYLE } from "@/lib/demoData";
+import RelationshipLearnings from "./RelationshipLearnings";
+import { deriveRelationshipLearnings } from "@/lib/intelligenceEngine";
 
 const SOURCE_ICON = {
   Gmail:           { icon: Mail,          color: "text-red-400"    },
@@ -28,10 +30,16 @@ function formatDate(iso) {
  *   card   ActionCard (resolved, with extended model)
  *   index  number  (for stagger delay)
  */
-export default function MemoryCard({ card, index = 0 }) {
+export default function MemoryCard({ card, index = 0, allCards = [] }) {
   const catStyle = CATEGORY_STYLE[card.category] ?? "bg-white/5 text-muted border-white/10";
   const srcCfg   = SOURCE_ICON[card.source];
   const SrcIcon  = srcCfg?.icon;
+
+  // Derive relationship learnings for this card's company
+  const learningsMap = allCards.length > 0
+    ? deriveRelationshipLearnings(allCards)
+    : {};
+  const companyLearning = card.company ? learningsMap[card.company] : null;
 
   // Build mini-timeline steps from card data
   const timelineSteps = [
@@ -88,18 +96,20 @@ export default function MemoryCard({ card, index = 0 }) {
         )}
       </div>
 
-      {/* ── AI Learned ────────────────────────────────────── */}
-      {card.learning && (
-        <div className="rounded-btn border border-purple-500/15 bg-purple-500/5 p-3 space-y-1.5">
-          <div className="flex items-center gap-1.5">
-            <BrainCircuit size={12} className="text-purple-400" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-400">
-              AI Learned
-            </span>
-          </div>
-          <p className="text-xs leading-relaxed text-slate-300 italic">"{card.learning}"</p>
-        </div>
-      )}
+      {/* ── AI Learned (via shared RelationshipLearnings component) ─ */}
+      {companyLearning ? (
+        <RelationshipLearnings
+          company={card.company}
+          learnings={companyLearning.learnings}
+          trend={companyLearning.trend}
+        />
+      ) : card.learning ? (
+        <RelationshipLearnings
+          company={card.company}
+          learnings={[card.learning]}
+          trend="Stable"
+        />
+      ) : null}
 
       {/* ── Future Recommendation ─────────────────────────── */}
       {card.recommendation && (

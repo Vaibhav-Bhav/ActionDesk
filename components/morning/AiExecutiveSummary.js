@@ -3,68 +3,57 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, RefreshCw, ShieldCheck, Check,
+  Sparkles, RefreshCw,
   TrendingUp, AlertTriangle, Clock, Building2,
+  Heart, CheckCircle2,
 } from "lucide-react";
-import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
+import { buildIntelligenceContext } from "@/lib/intelligenceEngine";
+import TrustBlock from "@/components/ui/TrustBlock";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Confidence sources shown in the transparency block
-// ─────────────────────────────────────────────────────────────────────────────
-
-const DATA_SOURCES = [
-  "Current Action Cards",
-  "Business Memory",
-  "Customer History",
-  "Business Intelligence Engine",
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Business Impact Metrics (computed from BI engine, not hardcoded)
+// Business Impact Metric Cards (computed, not hardcoded)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildMetrics(bi) {
-  const pendingCards = bi.metrics?.pendingActions ?? 0;
-  const highPriority = bi.businessSnapshot?.urgentActions?.value ?? 0;
-
-  // Count distinct companies that have pending high-priority cards
-  // (derived from relationships data — companies with Critical/Needs Attention health)
-  const criticalCompanies = (bi.businessRelationships ?? [])
+  const pendingCards  = bi.metrics?.pendingActions ?? 0;
+  const highPriority  = bi.businessSnapshot?.urgentActions?.value ?? 0;
+  const criticalCount = (bi.businessRelationships ?? [])
     .filter((r) => r.health === "Critical" || r.health === "Needs Attention")
     .length;
 
   return [
     {
-      id:     "opp",
-      icon:   TrendingUp,
-      label:  "Revenue Opportunity",
-      value:  bi.revenue?.potentialRevenue ?? "₹0",
-      tone:   "accent",
-      sub:    "Pending quotations & orders",
+      id:    "opp",
+      icon:  TrendingUp,
+      label: "Revenue Opportunity",
+      value: bi.revenue?.potentialRevenue ?? "₹0",
+      tone:  "accent",
+      sub:   "Pending quotations & orders",
     },
     {
-      id:     "risk",
-      icon:   AlertTriangle,
-      label:  "Revenue at Risk",
-      value:  bi.revenue?.revenueAtRisk ?? "₹0",
-      tone:   "danger",
-      sub:    "High-priority & overdue items",
+      id:    "risk",
+      icon:  AlertTriangle,
+      label: "Revenue at Risk",
+      value: bi.revenue?.revenueAtRisk ?? "₹0",
+      tone:  "danger",
+      sub:   "High-priority & overdue items",
     },
     {
-      id:     "actions",
-      icon:   Clock,
-      label:  "High Priority Actions",
-      value:  highPriority,
-      tone:   "warning",
-      sub:    `${pendingCards} total pending`,
+      id:    "actions",
+      icon:  Clock,
+      label: "High Priority",
+      value: highPriority,
+      tone:  "warning",
+      sub:   `${pendingCards} total pending`,
     },
     {
-      id:     "customers",
-      icon:   Building2,
-      label:  "Critical Customers",
-      value:  criticalCompanies || "—",
-      tone:   "success",
-      sub:    "Need attention today",
+      id:    "customers",
+      icon:  Building2,
+      label: "Critical Customers",
+      // Fix: never show "—", always show a human-readable value
+      value: criticalCount > 0 ? criticalCount : "None",
+      tone:  criticalCount > 0 ? "danger" : "success",
+      sub:   criticalCount > 0 ? "Need attention today" : "No critical customers today",
     },
   ];
 }
@@ -77,6 +66,105 @@ const TONE_STYLE = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Health indicator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function HealthRow({ bi }) {
+  const snap   = bi?.businessSnapshot?.businessHealth;
+  const health = bi?.businessRelationships
+    ? { status: snap?.status ?? "—", score: snap?.score ?? 0 }
+    : null;
+
+  if (!health) return null;
+
+  const color =
+    health.score >= 80 ? "text-success" :
+    health.score >= 60 ? "text-warning" :
+    "text-danger";
+
+  return (
+    <div className="flex items-center gap-2">
+      <Heart size={13} className={color} />
+      <span className={`text-sm font-semibold ${color}`}>{health.status}</span>
+      <span className="text-sm text-muted">({health.score}/100)</span>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sectioned Summary (replaces single paragraph)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SectionedSummary({ bi, aiText, loading }) {
+  const opp  = bi?.biggestOpportunity;
+  const risk = bi?.biggestRisk;
+  const priorities = bi?.strategicPriorities?.slice(0, 3) ?? [];
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+      {/* Business Health */}
+      <div className="rounded-card border border-border bg-elevated p-4 space-y-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Business Health</p>
+        <HealthRow bi={bi} />
+        {bi?.businessSnapshot?.businessHealth?.explanation && (
+          <p className="text-[11px] text-muted leading-relaxed line-clamp-2">
+            {bi.businessSnapshot.businessHealth.explanation}
+          </p>
+        )}
+      </div>
+
+      {/* Top Opportunity */}
+      <div className="rounded-card border border-emerald-500/15 bg-emerald-500/5 p-4 space-y-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Top Opportunity</p>
+        {opp && opp.company !== "No pending opportunities" ? (
+          <>
+            <p className="text-sm font-semibold text-white leading-snug">{opp.company}</p>
+            <p className="text-[11px] text-emerald-300 font-medium">{opp.estimatedRevenue}</p>
+            <p className="text-[11px] text-muted leading-relaxed line-clamp-2">{opp.action}</p>
+          </>
+        ) : (
+          <p className="text-[12px] text-muted">No pending opportunities</p>
+        )}
+      </div>
+
+      {/* Biggest Risk */}
+      <div className="rounded-card border border-red-500/15 bg-red-500/5 p-4 space-y-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-red-400">Biggest Risk</p>
+        {risk && risk.company !== "No active risks" ? (
+          <>
+            <p className="text-sm font-semibold text-white leading-snug">{risk.company}</p>
+            <p className="text-[11px] text-muted leading-relaxed line-clamp-2">{risk.insight}</p>
+            <p className="text-[11px] text-red-300 font-medium leading-snug">{risk.action}</p>
+          </>
+        ) : (
+          <p className="text-[12px] text-muted">No active risks</p>
+        )}
+      </div>
+
+      {/* Today's Priorities */}
+      <div className="rounded-card border border-border bg-elevated p-4 space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Today's Priorities</p>
+        {priorities.length > 0 ? (
+          <ul className="space-y-1.5">
+            {priorities.map((p, i) => (
+              <li key={p.id ?? i} className="flex items-start gap-2">
+                <CheckCircle2 size={11} className="text-accent shrink-0 mt-0.5" />
+                <span className="text-[11px] text-slate-300 leading-snug line-clamp-1">
+                  {p.title}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[12px] text-muted">No pending priorities</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -87,14 +175,13 @@ const TONE_STYLE = {
  *   cards  ActionCard[]
  */
 export default function AiExecutiveSummary({ cards }) {
-  const [summary,    setSummary]    = useState(null);
-  const [confidence, setConfidence] = useState(null);
+  const [aiText,     setAiText]     = useState(null);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
 
-  // Compute BI on the client (pure, no fetch needed)
-  const bi = generateBusinessIntelligence(cards);
-  const metrics = buildMetrics(bi);
+  // Build full intelligence context (includes confidence)
+  const ctx     = buildIntelligenceContext(cards);
+  const metrics = buildMetrics(ctx);
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
@@ -102,13 +189,10 @@ export default function AiExecutiveSummary({ cards }) {
     try {
       const res  = await fetch("/api/morning-brief", { method: "POST" });
       const data = await res.json();
-      setSummary(data.summary);
-      setConfidence(data.confidence);
-    } catch (err) {
-      setError("Could not generate summary.");
-      // Fallback to BI-computed summary
-      setSummary(bi.executiveSummary);
-      setConfidence(70);
+      setAiText(data.summary ?? null);
+    } catch {
+      setError("Could not refresh summary.");
+      setAiText(ctx.executiveSummary ?? null);
     } finally {
       setLoading(false);
     }
@@ -130,15 +214,10 @@ export default function AiExecutiveSummary({ cards }) {
       {/* Top accent */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.025] rounded-2xl"
-        style={{ background: "radial-gradient(ellipse 50% 30% at 20% 0%, #4F73FF, transparent 70%)" }}
-      />
+      <div className="p-6 space-y-5">
 
-      <div className="p-6">
         {/* ── Header ─────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent/15">
               <Sparkles size={12} className="text-accent" />
@@ -157,11 +236,11 @@ export default function AiExecutiveSummary({ cards }) {
           </button>
         </div>
 
-        {/* ── Business Impact Metrics Row ─────────────────────── */}
-        <div className="grid grid-cols-2 gap-3 mb-5 lg:grid-cols-4">
+        {/* ── KPI Metrics Row ─────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {metrics.map((m, i) => {
             const Icon = m.icon;
-            const t = TONE_STYLE[m.tone];
+            const t    = TONE_STYLE[m.tone];
             return (
               <motion.div
                 key={m.id}
@@ -170,12 +249,10 @@ export default function AiExecutiveSummary({ cards }) {
                 transition={{ duration: 0.3, delay: i * 0.06 }}
                 className={`rounded-card border ${t.border} ${t.bg} p-3`}
               >
-                <div className={`flex h-6 w-6 items-center justify-center rounded-btn bg-white/5 mb-2`}>
+                <div className="flex h-6 w-6 items-center justify-center rounded-btn bg-white/5 mb-2">
                   <Icon size={12} className={t.icon} />
                 </div>
-                <p className="text-lg font-bold tabular-nums text-white leading-none">
-                  {m.value}
-                </p>
+                <p className="text-lg font-bold tabular-nums text-white leading-none">{m.value}</p>
                 <p className="mt-1 text-[11px] font-medium text-slate-300 leading-tight">{m.label}</p>
                 <p className="mt-0.5 text-[10px] text-muted">{m.sub}</p>
               </motion.div>
@@ -183,96 +260,52 @@ export default function AiExecutiveSummary({ cards }) {
           })}
         </div>
 
-        {/* ── AI Summary Text ─────────────────────────────────── */}
-        <div className="rounded-card border border-border bg-elevated px-5 py-4 min-h-[90px]">
-          <AnimatePresence mode="wait">
-            {loading && (
+        {/* ── Sectioned Intelligence Summary ──────────────────── */}
+        <SectionedSummary bi={ctx} loading={loading} />
+
+        {/* ── Optional AI prose (loading skeleton while generating) ── */}
+        <AnimatePresence mode="wait">
+          {loading && (
+            <motion.div
+              key="skel"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="rounded-card border border-border bg-elevated px-5 py-4 flex items-center gap-3"
+            >
               <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-3"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
               >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                >
-                  <Sparkles size={14} className="text-accent" />
-                </motion.div>
-                <div className="flex-1 space-y-2">
-                  <div className="skeleton h-3 w-full rounded" />
-                  <div className="skeleton h-3 w-4/5 rounded" />
-                  <div className="skeleton h-3 w-3/5 rounded" />
-                </div>
+                <Sparkles size={14} className="text-accent" />
               </motion.div>
-            )}
-            {!loading && summary && (
-              <motion.p
-                key="summary"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="text-[13px] leading-relaxed text-slate-200"
-              >
-                {summary}
-              </motion.p>
-            )}
-            {!loading && error && !summary && (
-              <motion.p
-                key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-xs text-muted"
-              >
-                {error}
-              </motion.p>
-            )}
-          </AnimatePresence>
+              <div className="flex-1 space-y-2">
+                <div className="skeleton h-3 w-full rounded" />
+                <div className="skeleton h-3 w-4/5 rounded" />
+              </div>
+            </motion.div>
+          )}
+
+          {!loading && aiText && (
+            <motion.div
+              key="aitext"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="rounded-card border border-border bg-elevated px-5 py-3"
+            >
+              <p className="text-[12px] text-muted leading-relaxed italic">
+                {aiText}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Trust Block (shared component) ─────────────────── */}
+        <div className="border-t border-border pt-4">
+          <TrustBlock confidence={ctx.confidence} />
         </div>
 
-        {/* ── AI Confidence + Transparency ───────────────────── */}
-        {confidence !== null && !loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between"
-          >
-            {/* Confidence */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck size={11} className="text-muted" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-                  AI Confidence
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-24 rounded-full bg-white/10 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${confidence}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="h-full rounded-full bg-accent"
-                  />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-300 tabular-nums">
-                  {confidence}%
-                </span>
-              </div>
-            </div>
-
-            {/* Data sources */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {DATA_SOURCES.map((src) => (
-                <div key={src} className="flex items-center gap-1">
-                  <Check size={9} className="text-success/70 shrink-0" />
-                  <span className="text-[10px] text-slate-500">{src}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
       </div>
     </motion.div>
   );

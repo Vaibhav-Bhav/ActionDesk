@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
 import { getCards } from "@/lib/store";
-import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
+import { buildIntelligenceContext } from "@/lib/intelligenceEngine";
 
 /**
  * POST /api/morning-brief
  *
- * Uses Groq to generate a polished executive summary from live BI data.
- * Keeps the prompt lean — BI engine does the heavy lifting, Groq polishes prose.
+ * Generates a polished executive summary using Groq + live BI data.
+ * Confidence score is derived from the shared intelligence engine (not ad-hoc).
  */
 export async function POST() {
   try {
     const cards = getCards();
-    const bi = generateBusinessIntelligence(cards);
+    const ctx   = buildIntelligenceContext(cards);
 
-    const { biggestOpportunity, biggestRisk, revenue, metrics, priorities } = bi;
+    const { biggestOpportunity, biggestRisk, revenue, metrics, priorities, confidence } = ctx;
 
-    // Build a compact data block for the prompt
     const dataBlock = [
-      `Business Health: ${bi.businessSnapshot.businessHealth.status} (${bi.businessSnapshot.businessHealth.score}/100)`,
+      `Business Health: ${ctx.businessSnapshot.businessHealth.status} (${ctx.businessSnapshot.businessHealth.score}/100)`,
       `Potential Revenue: ${revenue.potentialRevenue}`,
       `Revenue at Risk: ${revenue.revenueAtRisk}`,
       `Pending Collection: ${revenue.pendingCollection}`,
@@ -38,37 +37,24 @@ export async function POST() {
 
     const systemPrompt = `You are an executive business intelligence assistant for a small Indian furniture manufacturer.
 
-Generate a single-paragraph executive morning brief that summarises the business situation.
+Generate a single concise sentence (max 60 words) that gives the business owner one sharp, actionable takeaway for today.
 
 RULES:
-- Maximum 110 words. No markdown. No bullet points. Single paragraph of flowing prose.
-- Professional executive tone — like a CFO briefing a business owner.
-- Mention: overall business health, biggest opportunity, biggest risk, and 1-2 top priorities.
-- Be specific — reference actual company names, amounts, and actions from the data.
-- Do NOT use phrases like "Based on the data" or "According to the analysis".
-- Start directly with the business situation. No filler opening.`;
+- One sentence only. No markdown. No filler. No "Based on the data".
+- Professional tone. Reference actual names and amounts from the data.
+- Focus on the most urgent thing that needs attention.`;
 
-    const userPrompt = `Generate the executive morning brief using this live business data:\n\n${dataBlock}`;
-
-    // Confidence is computed from data richness
-    const confidence = Math.min(
-      100,
-      Math.round(
-        60 +
-          Math.min(metrics.totalActions * 3, 20) +
-          (metrics.overdueActions === 0 ? 10 : 0) +
-          (priorities.length >= 3 ? 10 : 0)
-      )
-    );
+    const userPrompt = `Generate the executive takeaway using this live business data:\n\n${dataBlock}`;
 
     const apiKey = process.env.GROQ_API_KEY;
     const model  = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 
     if (!apiKey) {
-      // Graceful fallback — return the BI-computed summary without Groq polish
       return NextResponse.json({
-        summary:    bi.executiveSummary,
-        confidence,
+        summary:    ctx.executiveSummary,
+        confidence: confidence.score,
+        present:    confidence.present,
+        missing:    confidence.missing,
         isFallback: true,
       });
     }
@@ -85,9 +71,9 @@ RULES:
           { role: "system", content: systemPrompt },
           { role: "user",   content: userPrompt },
         ],
-        temperature:  0.5,
-        max_tokens:   200,
-        stream:       false,
+        temperature: 0.4,
+        max_tokens:  120,
+        stream:      false,
       }),
     });
 
@@ -97,16 +83,23 @@ RULES:
     }
 
     const groqData = await groqRes.json();
-    const summary  = groqData.choices?.[0]?.message?.content?.trim() || bi.executiveSummary;
+    const summary  = groqData.choices?.[0]?.message?.content?.trim() || ctx.executiveSummary;
 
-    return NextResponse.json({ summary, confidence, isFallback: false });
-  } catch (err) {
-    // Always return something usable
-    const cards = getCards();
-    const bi    = generateBusinessIntelligence(cards);
     return NextResponse.json({
-      summary:    bi.executiveSummary,
-      confidence: 70,
+      summary,
+      confidence: confidence.score,
+      present:    confidence.present,
+      missing:    confidence.missing,
+      isFallback: false,
+    });
+  } catch (err) {
+    const cards = getCards();
+    const ctx   = buildIntelligenceContext(cards);
+    return NextResponse.json({
+      summary:    ctx.executiveSummary,
+      confidence: ctx.confidence.score,
+      present:    ctx.confidence.present,
+      missing:    ctx.confidence.missing,
       isFallback: true,
       error:      err.message,
     });
