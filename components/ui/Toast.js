@@ -15,15 +15,15 @@ let _toastId = 0;
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const addToast = useCallback(({ message, type = "info", duration = 4000 }) => {
     const id = ++_toastId;
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => removeToast(id), duration);
-  }, []);
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [removeToast]);
 
   return (
     <ToastContext.Provider value={{ addToast }}>

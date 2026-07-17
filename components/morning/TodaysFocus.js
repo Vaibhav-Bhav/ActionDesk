@@ -40,7 +40,7 @@ export default function TodaysFocus({ cards }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted">
-          Today's Focus
+          Today&apos;s Focus
         </p>
         <button
           onClick={() => router.push("/action-center")}

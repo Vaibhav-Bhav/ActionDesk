@@ -79,7 +79,7 @@ export default function SearchResults({ query, cards, onClose }) {
   if (!hasResults) {
     return (
       <div className="px-4 py-8 text-center">
-        <p className="text-sm text-muted">No results found for "{query}"</p>
+        <p className="text-sm text-muted">No results found for &quot;{query}&quot;</p>
         <p className="mt-1 text-xs text-subtle">Try searching by company, category, or tag.</p>
       </div>
     );
