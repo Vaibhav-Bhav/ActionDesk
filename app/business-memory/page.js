@@ -1,24 +1,17 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { useCards } from "@/lib/useCards";
+import { useMemo, useState } from "react";
 import { BrainCircuit, CheckCircle2, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useIntelligence } from "@/lib/useIntelligence";
 import MemoryStats from "@/components/memory/MemoryStats";
 import MemorySearch from "@/components/memory/MemorySearch";
 import MemoryCard from "@/components/memory/MemoryCard";
-import ContextBanner from "@/components/ui/ContextBanner";
-import { parseDeepLink } from "@/lib/deepLink";
+import IntelligenceBanner from "@/components/ui/IntelligenceBanner";
 
-// ── Inner component reads useSearchParams() — must be in a Suspense boundary
-function BusinessMemoryInner() {
-  const { cards, loading } = useCards();
-  const searchParams = useSearchParams();
-
-  // ── Deep-link: seed initial search from URL params ────────────────
-  const intent = useMemo(() => parseDeepLink(searchParams), [searchParams]);
-  const [query, setQuery] = useState(intent.company || "");
+export default function BusinessMemoryPage() {
+  const { cards, loading } = useIntelligence();
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [bannerSource, setBannerSource] = useState(intent.from || null);
   const dismissBanner = useCallback(() => setBannerSource(null), []);
@@ -28,7 +21,6 @@ function BusinessMemoryInner() {
   const filtered = useMemo(() => {
     let result = done;
 
-    // Category/type filter
     if (filter === "customer") {
       result = result.filter((c) =>
         ["Customer Request", "Complaint", "Quotation", "Meeting"].includes(c.category)
@@ -43,7 +35,6 @@ function BusinessMemoryInner() {
       result = result.filter((c) => c.category === "Complaint");
     }
 
-    // Text search
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter((c) =>
@@ -55,6 +46,10 @@ function BusinessMemoryInner() {
 
     return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [done, query, filter]);
+
+  // Banner stats derived from cards
+  const companies     = new Set(done.map((c) => c.company).filter(Boolean)).size;
+  const learningsCount = done.filter((c) => c.learning).length;
 
   return (
     <div className="space-y-6">
@@ -73,13 +68,25 @@ function BusinessMemoryInner() {
       {loading && (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 rounded-card border border-border bg-surface animate-pulse" />
+            <div key={i} className="h-40 rounded-card border border-border bg-surface animate-pulse" />
           ))}
         </div>
       )}
 
       {!loading && (
         <>
+          {/* Intelligence Banner */}
+          <IntelligenceBanner
+            title="Business Memory"
+            subtitle="Institutional knowledge from resolved actions"
+            variant="memory"
+            stats={[
+              { label: "memories", value: done.length },
+              { label: "companies", value: companies },
+              { label: "AI learnings", value: learningsCount || done.length },
+            ]}
+          />
+
           {/* Stats */}
           <MemoryStats cards={cards} />
 
@@ -114,7 +121,6 @@ function BusinessMemoryInner() {
                   Action Center <ArrowRight size={11} />
                 </a>
               </div>
-              {/* How it works flow */}
               <div className="mt-8 flex flex-wrap justify-center gap-2 text-[11px] text-muted">
                 {["Import communication", "→", "AI extracts action", "→", "You resolve it", "→", "Knowledge saved here"].map((step, i) => (
                   <span key={i} className={step === "→" ? "text-border" : "font-medium text-slate-400"}>
@@ -133,14 +139,14 @@ function BusinessMemoryInner() {
             </div>
           )}
 
-          {/* Memory cards */}
+          {/* Memory cards — pass all cards so RelationshipLearnings can derive patterns */}
           {filtered.length > 0 && (
             <div className="space-y-4">
               <p className="text-xs text-muted">
                 {filtered.length} memor{filtered.length !== 1 ? "ies" : "y"} found
               </p>
               {filtered.map((card, i) => (
-                <MemoryCard key={card.id} card={card} index={i} />
+                <MemoryCard key={card.id} card={card} index={i} allCards={cards} />
               ))}
             </div>
           )}

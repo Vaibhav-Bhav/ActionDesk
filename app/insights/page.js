@@ -1,9 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { useCards } from "@/lib/useCards";
-import { generateBusinessIntelligence } from "@/lib/businessIntelligence";
-
+import { useIntelligence } from "@/lib/useIntelligence";
 import {
   ExecutiveInsights,
   BusinessRelationships,
@@ -12,24 +9,33 @@ import {
   PatternDiscovery,
   StrategicPriorities,
 } from "@/components/intelligence";
+import IntelligenceBanner from "@/components/ui/IntelligenceBanner";
+import TrustBlock from "@/components/ui/TrustBlock";
 
 export default function InsightsPage() {
-  const { cards, loading } = useCards();
-
-  const intelligence = useMemo(
-    () => generateBusinessIntelligence(cards),
-    [cards]
-  );
+  const { bi, confidence, cards, loading } = useIntelligence();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-sm text-muted animate-pulse">
-          Generating business intelligence…
-        </div>
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-32 rounded-card border border-border bg-surface animate-pulse" />
+        ))}
       </div>
     );
   }
+
+  if (!bi) {
+    return (
+      <div className="rounded-card border border-border bg-surface px-8 py-16 text-center">
+        <p className="text-sm text-muted">No intelligence data available yet.</p>
+        <p className="mt-1 text-xs text-muted">Import business communications to get started.</p>
+      </div>
+    );
+  }
+
+  const companies = bi.metrics?.companies ?? 0;
+  const total     = bi.metrics?.totalActions ?? 0;
 
   return (
     <div className="space-y-8">
@@ -41,23 +47,43 @@ export default function InsightsPage() {
         </p>
       </div>
 
-      {/* Section 1 — Executive Insights (Hero) */}
-      <ExecutiveInsights data={intelligence.executiveInsights} />
+      {/* Intelligence Banner */}
+      <IntelligenceBanner
+        title="Strategic analysis from live business data"
+        subtitle="Business Intelligence Engine"
+        variant="insights"
+        stats={[
+          { label: "action cards", value: total },
+          { label: "customers",    value: companies },
+          { label: "confidence",   value: `${confidence.score}%` },
+        ]}
+      />
+
+      {/* Section 1 — Executive Insights */}
+      <ExecutiveInsights data={bi.executiveInsights} />
 
       {/* Section 2 — Business Relationships */}
-      <BusinessRelationships data={intelligence.businessRelationships} />
+      <BusinessRelationships data={bi.businessRelationships} />
 
       {/* Section 3 — Business Snapshot */}
-      <BusinessSnapshot data={intelligence.businessSnapshot} />
+      <BusinessSnapshot data={bi.businessSnapshot} />
 
       {/* Section 4 — Mini Trends */}
-      <MiniTrends data={intelligence.miniTrends} />
+      <MiniTrends data={bi.miniTrends} />
 
       {/* Section 5 — AI Pattern Discovery */}
-      <PatternDiscovery data={intelligence.aiPatterns} />
+      <PatternDiscovery data={bi.aiPatterns} />
 
       {/* Section 6 — Today's Strategic Priorities */}
-      <StrategicPriorities data={intelligence.strategicPriorities} />
+      <StrategicPriorities data={bi.strategicPriorities} />
+
+      {/* Trust Block at bottom */}
+      <div className="rounded-card border border-border bg-surface p-5">
+        <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-muted">
+          Intelligence Sources
+        </p>
+        <TrustBlock confidence={confidence} />
+      </div>
     </div>
   );
 }
